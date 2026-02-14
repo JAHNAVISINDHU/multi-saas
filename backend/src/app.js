@@ -1,0 +1,73 @@
+import express from 'express';
+import cors from 'cors';
+import env from './config/env.js';
+
+import authRoutes from './routes/auth.routes.js';
+import userRoutes from './routes/user.routes.js';
+import projectRoutes from './routes/project.routes.js';
+import taskRoutes from './routes/task.routes.js';
+
+const app = express();
+
+/**
+ * Global Middleware
+ */
+app.use(cors({
+  origin: env.frontendUrl,
+  credentials: true,
+}));
+
+app.use(express.json());
+
+/**
+ * Base Route (test)
+ */
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Backend API is running',
+  });
+});
+
+/**
+ * Health Check (MANDATORY)
+ */
+import pool from './config/db.js';
+
+/**
+ * Health Check (MANDATORY)
+ */
+app.get('/api/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({
+      status: 'ok',
+      database: 'connected',
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      database: 'disconnected',
+    });
+  }
+});
+
+/**
+ * ROUTES
+ */
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/tasks', taskRoutes);
+
+/**
+ * Handle unknown routes (ALWAYS LAST)
+ */
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+  });
+});
+
+export default app;
